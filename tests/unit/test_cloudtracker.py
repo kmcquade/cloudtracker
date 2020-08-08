@@ -63,7 +63,6 @@ class TestCloudtracker(unittest.TestCase):
         """Test make_list"""
         self.assertEquals(["hello"], make_list("hello"))
 
-
     def test_get_actions_from_statement(self):
         """Test get_actions_from_statement"""
 
@@ -74,8 +73,18 @@ class TestCloudtracker(unittest.TestCase):
                           {'s3:putobject': True})
 
         stmt = {"Action": ["s3:PutObject*"], "Resource": "*", "Effect": "Allow"}
-        self.assertEquals(privileges.get_actions_from_statement(stmt),
-                          {'s3:putobject': True, 's3:putobjectacl': True, 's3:putobjecttagging': True})
+
+        expected_result = {
+            's3:putobject': True,
+            's3:putobjectacl': True,
+            's3:putobjectlegalhold': True,
+            's3:putobjectretention': True,
+            's3:putobjecttagging': True,
+            's3:putobjectversionacl': True,
+            's3:putobjectversiontagging': True
+        }
+
+        self.assertEquals(privileges.get_actions_from_statement(stmt), expected_result)
 
         stmt = {"Action": ["s3:*ObjectT*"], "Resource": "*", "Effect": "Allow"}
         self.assertEquals(privileges.get_actions_from_statement(stmt),
@@ -151,7 +160,6 @@ class TestCloudtracker(unittest.TestCase):
         self.assertTrue('s3:deletebucket' in privileges.determine_allowed())
         self.assertTrue('s3:createbucket' not in privileges.determine_allowed())
 
-
     def test_get_actions_from_statement_with_conditions(self):
         """
         Test that even when we are denied access based on a condition,
@@ -189,7 +197,6 @@ class TestCloudtracker(unittest.TestCase):
         # Ensure service renaming occurs
         self.assertEquals(normalize_api_call('monitoring', 'DescribeAlarms'), 'cloudwatch:describealarms')
 
-
     def test_print_actor_diff(self):
         """Test print_actor_diff"""
         with capture(print_actor_diff, [], [], False) as output:
@@ -198,7 +205,6 @@ class TestCloudtracker(unittest.TestCase):
         # Test output when you have 3 configured users, but only two actually did anything
         with capture(print_actor_diff, ['alice', 'bob'], ['alice', 'bob', 'charlie'], False) as output:
             self.assertEquals('  alice\n  bob\n- charlie\n', output)
-
 
     def test_print_diff(self):
         """Test print_diff"""
@@ -303,7 +309,6 @@ class TestCloudtracker(unittest.TestCase):
 
         self.assertEquals(self.role_iam, get_role_iam("test_role", account_iam))
 
-
     def test_get_role_allowed_actions(self):
         """Test get_role_allowed_actions"""
         account_iam = {
@@ -314,5 +319,14 @@ class TestCloudtracker(unittest.TestCase):
         }
 
         aws_api_list = read_aws_api_list()
-        self.assertEquals(sorted(['s3:putobject', 'kms:describekey', 'kms:decrypt', 's3:putobjectacl']),
-                          sorted(get_role_allowed_actions(aws_api_list, self.role_iam, account_iam)))
+        expected_result = sorted([
+            's3:putobject',
+            'kms:describekey',
+            's3:listbucket',
+            'kms:decrypt',
+            's3:putobjectacl'
+        ])
+        result = sorted(get_role_allowed_actions(aws_api_list, self.role_iam, account_iam))
+        print(expected_result)
+        print(result)
+        self.assertEquals(result, expected_result)

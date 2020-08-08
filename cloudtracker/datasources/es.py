@@ -35,7 +35,6 @@ class ElasticSearch(object):
     # Create search filters
     searchfilter = None
 
-
     def __init__(self, config, start, end):
         # Open connection to ElasticSearch
         self.es = Elasticsearch([config], timeout=900)
@@ -101,7 +100,6 @@ class ElasticSearch(object):
             user_names[user.key] = True
         return user_names
 
-
     def get_performed_roles(self):
         """
         Returns the roles that performed actions within the search filters
@@ -118,7 +116,6 @@ class ElasticSearch(object):
         for role in response.aggregations.role_names.buckets:
             role_names[role.key] = True
         return role_names
-
 
     def get_search_query(self):
         """
@@ -150,19 +147,16 @@ class ElasticSearch(object):
 
         return event_names
 
-
     def get_performed_event_names_by_user(self, searchquery, user_iam):
         """For a user, return all performed events"""
         searchquery = searchquery.query(self.get_query_match('userIdentity.arn', user_iam['Arn']))
         return self.get_events_from_search(searchquery)
-
 
     def get_performed_event_names_by_role(self, searchquery, role_iam):
         """For a role, return all performed events"""
         field = 'userIdentity.sessionContext.sessionIssuer.arn'
         searchquery = searchquery.query(self.get_query_match(field, role_iam['Arn']))
         return self.get_events_from_search(searchquery)
-
 
     def get_performed_event_names_by_user_in_role(self, searchquery, user_iam, role_iam):
         """For a user that has assumed into another role, return all performed events"""
@@ -183,7 +177,6 @@ class ElasticSearch(object):
             event_names.update(self.get_events_from_search(innerquery))
 
         return event_names
-
 
     def get_performed_event_names_by_role_in_role(self, searchquery, role_iam, dest_role_iam):
         """For a role that has assumed into another role, return all performed events"""
